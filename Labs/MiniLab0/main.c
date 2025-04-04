@@ -3,10 +3,10 @@
   ******************************************************************************
   * @file           : main.c
   * @brief          : ME 507 Minilab#0 LED Blinky and UART. Assignment to refresh
-  * 				          C programming and learning usage of the HAL API
+  * 		C programming and learning usage of the HAL API
   * @authors        : Arath Villanueva (abvillan@calpoly.edu)
-  * 				          Devon Bolt (dwbolt@calpoly.edu)
-  * @date			      : 03, April 2025
+  * 		Devon Bolt (dwbolt@calpoly.edu)
+  * @date	: 03, April 2025
   ******************************************************************************
   * @attention
   *
