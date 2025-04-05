@@ -13,4 +13,8 @@
 - Oscilloscope demonstrates the measurements in delay between the LED being set high and low to measure the accuracy of the software delays put in place.
 
 ### Takeaways
-- From completing lab blinky we are able to see how by simply using software delays there is inaccuracy in the timing when acutally measuring the time between the LED is set from high to low. In this lab we wanted to achieve a cycle of 500ms with 200ms of LED On and 300ms of the LED being Off, however when setting the delay to get the total 500ms cycles with the 200ms there was a 8ms discrepancy and with the 300ms set there was a 22ms discrepancy. The reasoning for the discrepancies were concluded to various reasons such as the transmission and print statements to PuTTY, but the main conclusion is due to the software delay functions are not as reliable as using internal hardware timers and the clocks. 
+- From completing lab blinky we are able to see how by simply using software delays there is inaccuracy in the timing when acutally measuring the time between the LED is set from high to low. In this lab we wanted to achieve a cycle of 500ms with 200ms of LED On and 300ms of the LED being Off, however when setting the delay to get the total 500ms cycles with the 200ms there was a 8ms discrepancy and with the 300ms set there was a 22ms discrepancy. The reasoning for the discrepancies were concluded to various reasons such as the transmission and print statements to PuTTY, but the main conclusion is due to the software delay functions are not as reliable as using internal hardware timers and the clocks.
+
+## Demo
+[Blinky and UART Demo](https://youtube.com/shorts/pL8lmw1s8vE?feature=share"@embed")
+
