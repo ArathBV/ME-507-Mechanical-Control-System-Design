@@ -1,7 +1,7 @@
 # ME 507 MiniLab#0 Blinky
 
 ### Setup
-![UART Blinky Setup](https://github.com/user-attachments/assets/5756692a-edd9-4df2-a656-6cd99aa9bf29)
+![UART Blinky Setup | 4032x3024,20%](https://github.com/user-attachments/assets/5756692a-edd9-4df2-a656-6cd99aa9bf29)
  - STM32F411 Blackpill Development board conneted to the ST-LINK Programmer/Debugger via the Serial Wire Debug in order to flash the code to the BlackPill board.
    
 ### PuTTY Terminal Output
