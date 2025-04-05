@@ -9,7 +9,7 @@
  - Every sequence the LED blinks on the board will output the number of times the LED has blinked since running the program.
 
 ### Oscilloscope Timing Readings
-![Oscilloscope Timing Delay Readings](https://github.com/user-attachments/assets/f6652766-363d-4a33-a3d5-2bbebe2d2908)
+![Oscilloscope Timing Delay Readings](https://github.com/user-attachments/assets/50fb78b0-54c9-4ee9-9983-ceaf9eaafb48)
 - Oscilloscope demonstrates the measurements in delay between the LED being set high and low to measure the accuracy of the software delays put in place.
 
 Takeaways\
