@@ -3,7 +3,7 @@ Arath Villanueva
 04, April 2025
 
 ### Setup
-![UART Blinky Setup](https://github.com/user-attachments/assets/5756692a-edd9-4df2-a656-6cd99aa9bf29)
+![UART Blinky Setup](https://github.com/user-attachments/assets/5756692a-edd9-4df2-a656-6cd99aa9bf29 =250x)
 
 ### PuTTY Terminal Output
 ![UART PUTTY OUTPUT](https://github.com/user-attachments/assets/867ca618-48c3-4aea-8ab0-43dadd8e6143)
