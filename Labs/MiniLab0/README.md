@@ -1,1 +1,16 @@
 # ME 507 MiniLab#0 Blinky
+
+### Setup
+![UART Blinky Setup](https://github.com/user-attachments/assets/5756692a-edd9-4df2-a656-6cd99aa9bf29)
+ - STM32F411 Blackpill Development board conneted to the ST-LINK Programmer/Debugger via the Serial Wire Debug in order to flash the code to the BlackPill board.
+   
+### PuTTY Terminal Output
+![UART PUTTY OUTPUT](https://github.com/user-attachments/assets/867ca618-48c3-4aea-8ab0-43dadd8e6143)
+ - Every sequence the LED blinks on the board will output the number of times the LED has blinked since running the program.
+
+### Oscilloscope Timing Readings
+![Oscilloscope Timing Delay Readings](https://github.com/user-attachments/assets/f6652766-363d-4a33-a3d5-2bbebe2d2908)
+- Oscilloscope demonstrates the measurements in delay between the LED being set high and low to measure the accuracy of the software delays put in place.
+
+Takeaways\
+From completing lab blinky we are able to see how by simply using software delays there is inaccuracy in the timing when acutally measuring the time between the LED is set from high to low. In this lab we wanted to achieve a cycle of 500ms with 200ms of LED On and 300ms of the LED being Off, however when setting the delay to get the total 500ms cycles with the 200ms there was a 8ms discrepancy and with the 300ms set there was a 22ms discrepancy. The reasoning for the discrepancies were concluded to various reasons such as the transmission and print statements to PuTTY, but the main conclusion is due to the software delay functions are not as reliable as using internal hardware timers and the clocks. 
