@@ -1,6 +1,6 @@
 # Homework 0: 8-Bit Dip Switch R2R DAC in Fusion 360
 Arath Villanueva \
-04, April 2025 \
+04, April 2025 
 
 ### Schematic
 ![8bitSchematic](https://github.com/user-attachments/assets/bbf42ff4-c0a2-473f-b9f4-b0eddac1610c)
