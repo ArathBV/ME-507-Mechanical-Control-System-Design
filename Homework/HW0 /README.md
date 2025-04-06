@@ -9,8 +9,8 @@ Arath Villanueva \
 ![8bitPCB](https://github.com/user-attachments/assets/b9677828-5499-45f7-aa13-b4c5b88ff757)
 
 ### 3D Model of PCB
-**Isometric View**
+**Isometric View** \
 ![8bitIsoView](https://github.com/user-attachments/assets/d29ce7df-fea7-4964-bed4-f28a222843c8)
 
-**Front View**
+**Front View** \
 ![8bitFrontView](https://github.com/user-attachments/assets/a59c37d9-4f8a-4655-a83f-4d2dde4be428)
