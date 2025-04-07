@@ -3,6 +3,7 @@ Arath Villanueva \
 04, April 2025 
 
 ### Schematic
+![ME 507 SchematicFrame](https://github.com/user-attachments/assets/e6834afb-9bc7-4831-a761-d786023c2da1)
 ![8bitSchematic](https://github.com/user-attachments/assets/bbf42ff4-c0a2-473f-b9f4-b0eddac1610c)
 
 ### PCB Design Layout
