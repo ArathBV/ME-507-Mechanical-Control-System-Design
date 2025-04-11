@@ -105,7 +105,7 @@ int main(void)
 /*Timer IRQ Handler*/
 void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim){
 	char buffer[1024];
-	int len = sprintf(buffer, "LED HAS BLINKED %d TIMES\r\n", (int) __HAL_TIM_GET_COUNTER(&htim4));
+	int len = sprintf(buffer, "LED HAS BLINKED %d TIMES\r\nPWM Duty is at %d%% \r\n", (int) __HAL_TIM_GET_COUNTER(&htim4), (((int) __HAL_TIM_GET_COMPARE(&htim1, TIM_CHANNEL_2)+1) /480));
 	HAL_UART_Transmit(&huart2, (uint8_t *)buffer, len, 10);
 	memset(buffer, 0, sizeof(buffer));
 }
