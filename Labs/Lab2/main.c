@@ -18,27 +18,10 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "string.h"
 #include "motor_driver.h"
+#include "motorTerminal.h"
 
-/* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */
-
-/* USER CODE END Includes */
-
-/* Private typedef -----------------------------------------------------------*/
-/* USER CODE BEGIN PTD */
-
-/* USER CODE END PTD */
-
-/* Private define ------------------------------------------------------------*/
-/* USER CODE BEGIN PD */
-
-/* USER CODE END PD */
-
-/* Private macro -------------------------------------------------------------*/
-/* USER CODE BEGIN PM */
-
-/* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
 TIM_HandleTypeDef htim1;
@@ -80,55 +63,25 @@ int main(void)
   MX_GPIO_Init();
   MX_TIM1_Init();
   MX_USART2_UART_Init();
-  
-  
-/*
-   // Motor 1 PWM
-   HAL_TIM_PWM_Start_IT(&htim1, TIM_CHANNEL_1); // PA8
-   HAL_TIM_PWM_Start_IT(&htim1, TIM_CHANNEL_2); // PA9
-
-  // Motor 2 PWM
-
-  HAL_TIM_PWM_Start_IT(&htim1, TIM_CHANNEL_3); // PA10
-  HAL_TIM_PWM_Start_IT(&htim1, TIM_CHANNEL_4); // PA11
-
-  uint32_t PWM_Duty = 2399;
-  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, PWM_Duty);
-  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, PWM_Duty);
-  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, PWM_Duty);
-  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_4, PWM_Duty);
-*/
-
 
   MotorController motor1;
   MotorController motor2;
+
+  /*Initializing Motors*/
   initMotor(&motor1, &htim1, TIM_CHANNEL_1, TIM_CHANNEL_2);
   initMotor(&motor2, &htim1, TIM_CHANNEL_3, TIM_CHANNEL_4);
-  uint32_t ch1 = TIM_CHANNEL_1;
-  uint32_t ch2 = TIM_CHANNEL_2;
-  uint32_t ch3 = TIM_CHANNEL_3;
-  uint32_t ch4 = TIM_CHANNEL_4;
-  TIM_HandleTypeDef *tim1 = &htim1;
 
+  /*Enabling Motors*/
   enableMotor(&motor1);
   enableMotor(&motor2);
 
- //setDutyCycle(&motor1, 50);
-//
-//
-//
-//  uint32_t PWM_Duty = 50;
-//  setDutyCycle(&motor1, PWM_Duty);
-//  setDutyCycle(&motor2, PWM_Duty);
+  initTerminal(&huart2);
+  uint8_t rx_data[4];
 
   while (1)
   {
-	  //HAL_Delay(500);
-//	  if(i == 0){
-//		  disableMotor(&motor1);
-//		  disableMotor(&motor2);
-//		  break;
-//	  }
+	  userRequest(&huart2, rx_data);
+	  //parseRequest(&huart2, rx_data);
 
   }
   /* USER CODE END 3 */
