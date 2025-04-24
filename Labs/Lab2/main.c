@@ -81,7 +81,7 @@ int main(void)
   while (1)
   {
 	  userRequest(&huart2, rx_data);
-	  //parseRequest(&huart2, rx_data);
+	  parseRequest(&huart2, rx_data);
 
   }
   /* USER CODE END 3 */
