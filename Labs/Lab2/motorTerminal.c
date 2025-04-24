@@ -37,7 +37,13 @@ void userRequest(UART_HandleTypeDef* huart, uint8_t* request) {
             	HAL_UART_Transmit(huart, (uint8_t*)"\r\n", 2, HAL_MAX_DELAY);
             	break;
             }
-            if (idx < REQ_SIZE) {
+
+            if((userData == 0x7f) && idx > 0){
+            	idx--;
+            	HAL_UART_Transmit(huart, &userData, 1, HAL_MAX_DELAY);
+            }
+
+            else if (idx < REQ_SIZE) {
             	HAL_UART_Transmit(huart, &userData, 1, HAL_MAX_DELAY);
                 request[idx++] = userData;
             }
@@ -46,8 +52,15 @@ void userRequest(UART_HandleTypeDef* huart, uint8_t* request) {
 }
 
 void parseRequest(UART_HandleTypeDef* huart, uint8_t* request){
-	HAL_UART_Transmit(huart, (uint8_t *)"\r\n", 2, HAL_MAX_DELAY);
-	HAL_UART_Transmit(huart, request, 4, HAL_MAX_DELAY);
+	uint8_t *resp = "Invalid Command\r\n";
+	if((request[0] != 'M') || (request[1] != 1) || (request[1] != 2)){
+		HAL_UART_Transmit(huart, resp, sizeof(resp), HAL_MAX_DELAY);
+		HAL_UART_Transmit(huart, USER_INPUT, 2, HAL_MAX_DELAY);
+	}
+	int num1 = request[2];
+	int num2 = request[3];
+	int8_t speed = (int8_t) ((uint32_t)num1*16+(uint32_t)num2);
+
 }
 
 
