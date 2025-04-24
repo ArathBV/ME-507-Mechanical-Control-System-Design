@@ -33,7 +33,10 @@ void userRequest(UART_HandleTypeDef* huart, uint8_t* request) {
 
     while (1) {
         if (HAL_UART_Receive(huart, &userData, 1, HAL_MAX_DELAY) == HAL_OK) {
-            if (userData == '\r') break;
+            if (userData == '\r'){
+            	HAL_UART_Transmit(huart, (uint8_t*)"\r\n", 2, HAL_MAX_DELAY);
+            	break;
+            }
             if (idx < REQ_SIZE) {
             	HAL_UART_Transmit(huart, &userData, 1, HAL_MAX_DELAY);
                 request[idx++] = userData;
