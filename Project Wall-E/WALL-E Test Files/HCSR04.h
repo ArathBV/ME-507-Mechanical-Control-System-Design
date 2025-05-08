@@ -22,22 +22,26 @@
 #ifndef INC_HCSR04_H_
 #define INC_HCSR04_H_
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <iostream>
+#include <cstdlib>
+#include <cstring>
 #include <unistd.h>
 #include "main.h"
 
-typedef struct distanceSensor{
-	TIM_HandleTypeDef * timer;
-	uint32_t echo;
-	uint32_t trig;
-	uint32_t distance;
-}distanceSensor;
-
-void initUltraSonic(distanceSensor*, TIM_HandleTypeDef *, uint32_t, uint32_t);
-void enableUltraSonic(distanceSensor*);
-void updateDistance(distanceSensor*);
-void disableUltraSonic(distanceSensor*);
+class HCSR04{
+	private:
+		TIM_HandleTypeDef *timer;
+		uint32_t echo;
+		uint32_t trig;
+		uint32_t distance;
+	public:
+		HCSR04(TIM_HandleTypeDef *, uint32_t, uint32_t);
+		void initUltraSonic(void);
+		void enableUltraSonic(void);
+		void updateDistance(void);
+		uint32_t getDistance(void);
+		void disableUltraSonic(void);
+};
 
 
 #endif /* INC_HCSR04_H_ */
