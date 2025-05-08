@@ -23,13 +23,14 @@ void enableMotor(MotorController* motor){
 	__HAL_TIM_SET_COMPARE(motor->timer, motor->CH_A, motor->dutyCycle);
 	__HAL_TIM_SET_COMPARE(motor->timer, motor->CH_B, motor->dutyCycle);
 	HAL_Delay(1000);
+	setDutyCycle(motor, 0);
 }
 
 
 /*
  *
  */
-int setDutyCycle(MotorController* motor, int duty){
+int setDutyCycle(MotorController* motor, int32_t duty){
 	if ((duty > 100) || (duty < -100)){
 		return -1;
 	}

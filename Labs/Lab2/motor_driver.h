@@ -1,5 +1,5 @@
-#ifndef _MOTOR_DRIVER_H
-#define _MOTOR_DRIVER_H
+#ifndef MOTOR_DRIVER_H
+#define MOTOR_DRIVER_H
 
 #include <stdint.h>
 #include <stdio.h>
@@ -16,7 +16,7 @@ typedef struct MotorController{
 
 void initMotor(MotorController*, TIM_HandleTypeDef*, uint32_t, uint32_t);
 void enableMotor(MotorController*);
-int setDutyCycle(MotorController*, int);
+int setDutyCycle(MotorController*, int32_t);
 void disableMotor(MotorController *);
 
 

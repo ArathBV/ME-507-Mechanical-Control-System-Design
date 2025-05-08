@@ -81,7 +81,20 @@ int main(void)
   while (1)
   {
 	  userRequest(&huart2, rx_data);
-	  parseRequest(&huart2, rx_data);
+	  int8_t speed = parseRequest(&huart2, rx_data);
+	  if(speed != -101){
+		  if(rx_data[1] == '1')
+		  	  setDutyCycle(&motor1, speed);
+		  else
+			  setDutyCycle(&motor2, speed);
+
+	  }
+
+	  if(speed == -102){
+		  disableMotor(&motor1);
+		  disableMotor(&motor2);
+	  }
+
 
   }
   /* USER CODE END 3 */
