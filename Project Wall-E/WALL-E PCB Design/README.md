@@ -1,4 +1,5 @@
 # PCB Design Layout for WALL-E
+## Authors: Devon Bolt, Arath Villanueva
 - 4 Layer PCB
   - Middle Layer 1, Ground Plane and a 5V bus
   - Middle Layer 2, 3.3V Plane and a 5V bus
