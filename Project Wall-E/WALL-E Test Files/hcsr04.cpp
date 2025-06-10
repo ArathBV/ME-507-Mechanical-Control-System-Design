@@ -23,85 +23,68 @@
 /*
  * @brief Constructor Function that initializes the class variables/instances
  */
+#include "hcsr04.h"
+
 HCSR04::HCSR04(GPIO_TypeDef* trigPort, uint16_t trigPin,
                GPIO_TypeDef* echoPort, uint16_t echoPin,
                TIM_HandleTypeDef* htim)
     : trigPort(trigPort), trigPin(trigPin),
       echoPort(echoPort), echoPin(echoPin),
-      htim(htim), startTick(0), endTick(0), measurementReady(false), echowait(false){}
+      htim(htim), distanceCm(0)
+{
+    HAL_TIM_Base_Start(htim); // Ensure timer is running
+}
 
 /*
- * @brief Function Triggers the trigger pin to send out a 10us pulse for the echo pin to read
+ * @brief Function Triggers the 10us Pulse on the trigger pin to be read from
+ * the echo pin
  * @return None
  */
 void HCSR04::trigger() {
     HAL_GPIO_WritePin(trigPort, trigPin, GPIO_PIN_RESET);
-    HAL_Delay(2);
+    HAL_Delay(1);  // Ensure clean low
+
     HAL_GPIO_WritePin(trigPort, trigPin, GPIO_PIN_SET);
-    HAL_Delay(0.01); // 10 us pulse
+    __HAL_TIM_SET_COUNTER(htim, 0);
+    while (__HAL_TIM_GET_COUNTER(htim) < 10); // 10 us pulse
     HAL_GPIO_WritePin(trigPort, trigPin, GPIO_PIN_RESET);
-    measurementReady = false;
-    echowait = true;
 }
 
 /*
- * @brief Function Handles reading the echo pin signal if received any signal at all.
- * @return None
- */
-void HCSR04::update() {
-	if (!echowait) return;
-
-	    uint32_t timeoutTicks = HAL_GetTick() + 30; // 30ms timeout
-	    while (HAL_GPIO_ReadPin(echoPort, echoPin) == GPIO_PIN_RESET) {
-	        if (HAL_GetTick() > timeoutTicks) {
-	            echowait = false;
-	            measurementReady = true;
-	            endTick = startTick = 0;
-	            return;
-	        }
-	    }
-
-	    __HAL_TIM_SET_COUNTER(htim, 0);
-	    startTick = __HAL_TIM_GET_COUNTER(htim);
-
-	    timeoutTicks = HAL_GetTick() + 30;
-	    while (HAL_GPIO_ReadPin(echoPort, echoPin) == GPIO_PIN_SET) {
-	        if (HAL_GetTick() > timeoutTicks) {
-	            echowait = false;
-	            measurementReady = true;
-	            endTick = startTick = 0;
-	            return;
-	        }
-	    }
-
-	    endTick  = __HAL_TIM_GET_COUNTER(htim);
-	    measurementReady = true;
-	    echowait = false;
-	}
-
-/*
- * @brief Function returns the set variable if the device is ready to measure
+ * @brief Function if the sensor is ready to measure the function triggers then calculates the
+ * distance an object is away from the sensor and updates it's variable
  * @return Boolean
  */
-bool HCSR04::isMeasurementReady(){
-    return measurementReady;
+bool HCSR04::measure() {
+    trigger();
+
+    uint32_t timeoutTick = HAL_GetTick();
+    while (HAL_GPIO_ReadPin(echoPort, echoPin) == GPIO_PIN_RESET) {
+        if (HAL_GetTick() - timeoutTick > 50) return false;  // timeout (no echo start)
+    }
+    uint32_t start = __HAL_TIM_GET_COUNTER(htim);
+
+    timeoutTick = HAL_GetTick();
+    while (HAL_GPIO_ReadPin(echoPort, echoPin) == GPIO_PIN_SET) {
+        if (HAL_GetTick() - timeoutTick > 50) return false;  // timeout (no echo end)
+    }
+    uint32_t end = __HAL_TIM_GET_COUNTER(htim);
+
+    uint32_t pulse_us = (end >= start) ? (end - start)
+                                       : ((htim->Instance->ARR - start) + end);
+
+    // Speed of sound = 343 m/s = 0.0343 cm/us
+    // Distance (cm) = pulse_us / 58 (since: 1 / 0.0343 / 2 ≈ 58)
+    distanceCm = pulse_us / 58;
+
+    return true;
 }
 
 /*
- * @brief Function calculates the distance of an object in cm based on the
- * tick count of the echo pin.
- * @return Float
+ * @brief Function allows the user to extract the Distance in cm the object is.
+ * @return uint32_t
  */
-float HCSR04::getDistance() {
-	// Measurement Ready Flag Check
-    if (!measurementReady) return -1.0f;
-    measurementReady = false;
-
-    // Ticks Check if Echo Receives
-    if (startTick == 0 && endTick == 0) return -1.0f;
-
-    // Ready For Calculation
-    uint32_t pulseDuration = endTick - startTick;
-    float distance = (pulseDuration * 0.0343f) / 2.0f;
-    return distance;
+uint32_t HCSR04::getDistanceCm() {
+    return distanceCm;
 }
+

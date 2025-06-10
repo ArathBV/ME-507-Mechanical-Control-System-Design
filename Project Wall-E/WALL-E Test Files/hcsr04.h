@@ -24,27 +24,23 @@
 #include "stm32f4xx_hal.h"
 
 class HCSR04 {
-public:
-    HCSR04(GPIO_TypeDef* trigPort, uint16_t trigPin,
-           GPIO_TypeDef* echoPort, uint16_t echoPin,
-           TIM_HandleTypeDef* htim);
+	public:
+		HCSR04(GPIO_TypeDef* trigPort, uint16_t trigPin,
+			   GPIO_TypeDef* echoPort, uint16_t echoPin,
+			   TIM_HandleTypeDef* htim);
 
-    void trigger();
-    bool isMeasurementReady();
-    float getDistance();
-    void update();
+		void trigger();             // Triggers a measurement
+		bool measure();             // Performs blocking measurement
+		uint32_t getDistanceCm();   // Returns distance in cm
 
-private:
-    GPIO_TypeDef* trigPort;
-    uint16_t trigPin;
-    GPIO_TypeDef* echoPort;
-    uint16_t echoPin;
-    TIM_HandleTypeDef* htim;
+	private:
+		GPIO_TypeDef* trigPort;
+		uint16_t trigPin;
+		GPIO_TypeDef* echoPort;
+		uint16_t echoPin;
+		TIM_HandleTypeDef* htim;
 
-    uint32_t startTick;
-    uint32_t endTick;
-    bool measurementReady;
-    bool echowait;
+		uint32_t distanceCm;
 };
 
 #endif /* INC_HCS04_H_ */
