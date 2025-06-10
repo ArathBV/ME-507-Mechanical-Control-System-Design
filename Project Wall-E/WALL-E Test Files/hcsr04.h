@@ -32,7 +32,7 @@ public:
     void trigger();
     bool isMeasurementReady();
     float getDistance();
-    void handleEcho();
+    void update();
 
 private:
     GPIO_TypeDef* trigPort;
@@ -44,6 +44,7 @@ private:
     uint32_t startTick;
     uint32_t endTick;
     bool measurementReady;
+    bool echowait;
 };
 
 #endif /* INC_HCS04_H_ */

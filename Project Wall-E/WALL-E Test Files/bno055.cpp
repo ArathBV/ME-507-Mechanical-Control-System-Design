@@ -25,6 +25,7 @@
 #define SYS_TRIGGER_ADDR  0x3F
 #define PWR_MODE_ADDR     0x3E
 #define PAGE_ID_ADDR      0x07
+#define CALIB_STAT        0x35
 
 
 /*
@@ -35,7 +36,7 @@ BNO055::BNO055(I2C_HandleTypeDef* hi2c, uint8_t addr)
 
 
 /*
- * @brief Function handles the configuration and initializattion of the BNO055 IMU
+ * @brief Function handles the configuration and initialization of the BNO055 IMU
  * @return Boolean
  */
 bool BNO055::init_imu(REG mode) {
@@ -97,6 +98,22 @@ int16_t BNO055::getRoll(){
  */
 int16_t BNO055::getPitch(){
 	return pitch;
+}
+
+/*
+ * @brief Function Checks the Calibration status of the IMU and individual sensors.
+ * @return True upon successful readings
+ */
+bool BNO055::readCalibStatus(uint8_t& sys, uint8_t& gyro, uint8_t& accel, uint8_t& mag){
+	uint8_t calib;
+
+	if(!readLen(0x35, &calib, 1))
+			return false;
+	sys   = (calib >> 6) & 0x03;
+	gyro  = (calib >> 4) & 0x03;
+	accel = (calib >> 2) & 0x03;
+	mag   = calib & 0x03;
+	return true;
 }
 
 /*

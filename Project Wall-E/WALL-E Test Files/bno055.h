@@ -56,6 +56,7 @@ class BNO055{
 
 		bool writeByte(uint8_t reg, uint8_t value);
 		bool readLen(uint8_t reg, uint8_t* buffer, uint8_t len);
+		bool readCalibStatus(uint8_t& sys, uint8_t& gyro, uint8_t& accel, uint8_t&mag);
 };
 
 
