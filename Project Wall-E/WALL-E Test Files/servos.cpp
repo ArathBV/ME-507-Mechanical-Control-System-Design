@@ -48,7 +48,7 @@ void Servo::detach() {
  */
 void Servo::setPulseWidth(uint16_t pulse_us) {
     if (pulse_us < 1000) pulse_us = 1000;
-    if (pulse_us > 2000) pulse_us = 2000;
+    //if (pulse_us > 2500) pulse_us = 2500;
 
     __HAL_TIM_SET_COMPARE(htim, channel, pulse_us);  // Each tick = 1 µs
 }
@@ -58,8 +58,12 @@ void Servo::setPulseWidth(uint16_t pulse_us) {
  * @return None
  */
 void Servo::setAngle(uint8_t angleDeg) {
-    if (angleDeg > 180) angleDeg = 180;
-    uint16_t pulse = angleToPulse(angleDeg);
+	// Clamp angle to [0,180]
+	if (angleDeg > 200) angleDeg = 200;
+
+	// Map angle to pulse width in microseconds
+	uint16_t pulse = 500 + ((uint16_t)angleDeg * 2000) / 180;  // 500–2500 µs
+
     setPulseWidth(pulse);
 }
 

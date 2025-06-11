@@ -20,6 +20,8 @@
 #include "romiMotor.h"
 #include "main.h"
 #include <cmath>
+//
+//#define OV2640_I2C_ADDR 0x60  // 0x30 << 1
 
 
 /*

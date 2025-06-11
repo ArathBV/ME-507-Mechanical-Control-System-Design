@@ -41,6 +41,8 @@ class BNO055{
 
 		bool init_imu(REG mode = REG::NDOF);
 		bool updateEuler();
+		bool readCalibStatus(uint8_t& sys, uint8_t& gyro, uint8_t& accel, uint8_t&mag);
+
 		int16_t getYaw();
 		int16_t getRoll();
 		int16_t getPitch();
@@ -56,7 +58,6 @@ class BNO055{
 
 		bool writeByte(uint8_t reg, uint8_t value);
 		bool readLen(uint8_t reg, uint8_t* buffer, uint8_t len);
-		bool readCalibStatus(uint8_t& sys, uint8_t& gyro, uint8_t& accel, uint8_t&mag);
 };
 
 

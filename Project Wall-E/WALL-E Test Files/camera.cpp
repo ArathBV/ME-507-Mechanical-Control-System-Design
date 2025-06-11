@@ -21,6 +21,9 @@
 #include "cameraRegs.h"
 #include <cstring> // for memset
 
+//#define OV2640_I2C_ADDR 0x60  // 0x30 << 1
+
+
 OV2640Camera::OV2640Camera(I2C_HandleTypeDef* i2c, SPI_HandleTypeDef* spi, GPIO_TypeDef* cs_port, uint16_t cs_pin)
     : i2c_(i2c), spi_(spi), cs_port_(cs_port), cs_pin_(cs_pin) {
     memset(frame_buffer_, 0, FRAME_SIZE);
@@ -75,13 +78,31 @@ bool OV2640Camera::captureFrame() {
     return true;
 }
 
-DominantColor OV2640Camera::analyzeColor() {
+void OV2640Camera::printCaptureReport(UART_HandleTypeDef* huart) {
+    char buf[128];
+
+    // --- Sample Pixels ---
+    HAL_UART_Transmit(huart, (uint8_t*)"\r\n--- Pixel Samples ---\r\n", 25, HAL_MAX_DELAY);
+    for (int i = 0; i < 32; i += 2) {
+        uint16_t pixel = (frame_buffer_[i] << 8) | frame_buffer_[i + 1];
+        uint8_t r = (pixel >> 11) & 0x1F;
+        uint8_t g = (pixel >> 5) & 0x3F;
+        uint8_t b = pixel & 0x1F;
+
+        uint8_t r8 = (r * 255) / 31;
+        uint8_t g8 = (g * 255) / 63;
+        uint8_t b8 = (b * 255) / 31;
+        snprintf(buf, sizeof(buf), "Pixel %03d: R=%3u G=%3u B=%3u\r\n", i / 2, r8, g8, b8);
+        HAL_UART_Transmit(huart, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+    }
+
+    // --- Average Color ---
     size_t red = 0, green = 0, blue = 0;
-    const size_t step = 4; // Sample every 2nd pixel (speed up)
+    size_t samples = 0;
+    const size_t step = 2;
 
     for (size_t i = 0; i + 1 < FRAME_SIZE; i += step) {
         uint16_t pixel = (frame_buffer_[i] << 8) | frame_buffer_[i + 1];
-
         uint8_t r = (pixel >> 11) & 0x1F;
         uint8_t g = (pixel >> 5) & 0x3F;
         uint8_t b = pixel & 0x1F;
@@ -89,10 +110,138 @@ DominantColor OV2640Camera::analyzeColor() {
         red += r;
         green += g;
         blue += b;
+        samples++;
     }
 
-    if (red > green && red > blue) return COLOR_RED;
-    if (green > red && green > blue) return COLOR_GREEN;
-    if (blue > red && blue > green) return COLOR_BLUE;
+    uint8_t avgR = (red * 255 / 31) / samples;
+    uint8_t avgG = (green * 255 / 63) / samples;
+    uint8_t avgB = (blue * 255 / 31) / samples;
+
+    HAL_UART_Transmit(huart, (uint8_t*)"\r\n--- Frame Summary ---\r\n", 25, HAL_MAX_DELAY);
+    snprintf(buf, sizeof(buf), "Avg RGB: R=%u G=%u B=%u\r\n", avgR, avgG, avgB);
+    HAL_UART_Transmit(huart, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+
+    // --- Dominant Color ---
+    DominantColor dom = analyzeColor();
+    const char* colorStr = "UNKNOWN";
+    if (dom == COLOR_RED) colorStr = "RED";
+    else if (dom == COLOR_GREEN) colorStr = "GREEN";
+    else if (dom == COLOR_BLUE) colorStr = "BLUE";
+
+    snprintf(buf, sizeof(buf), "Dominant Color: %s\r\n", colorStr);
+    HAL_UART_Transmit(huart, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+}
+
+DominantColor OV2640Camera::analyzeColor() {
+    size_t red = 0, green = 0, blue = 0;
+    const size_t step = 2;
+    size_t samples = 0;
+
+    for (size_t i = 0; i + 1 < FRAME_SIZE; i += step) {
+        uint16_t pixel = (frame_buffer_[i] << 8) | frame_buffer_[i + 1];
+        uint8_t r = (pixel >> 11) & 0x1F;
+        uint8_t g = (pixel >> 5) & 0x3F;
+        uint8_t b = pixel & 0x1F;
+
+        red += r;
+        green += g;
+        blue += b;
+        samples++;
+    }
+
+    // Normalize to average
+    red /= samples;
+    green /= samples;
+    blue /= samples;
+
+    // Brightness threshold
+    if ((red + green + blue) < 30) return COLOR_UNKNOWN;
+
+    // Color dominance margin
+    if ((red > green + 5) && (red > blue + 5)) return COLOR_RED;
+    if ((green > red + 5) && (green > blue + 5)) return COLOR_GREEN;
+    if ((blue > red + 5) && (blue > green + 5)) return COLOR_BLUE;
+
     return COLOR_UNKNOWN;
 }
+
+
+DominantColor OV2640Camera::analyzeColorCenter() {
+    size_t red = 0, green = 0, blue = 0;
+    size_t samples = 0;
+
+    // Define center region (central 25%)
+    const int x_start = 60;
+    const int x_end   = 100;
+    const int y_start = 45;
+    const int y_end   = 75;
+
+    for (int y = y_start; y < y_end; y++) {
+        for (int x = x_start; x < x_end; x++) {
+            size_t index = (y * 160 + x) * 2;
+            uint16_t pixel = (frame_buffer_[index] << 8) | frame_buffer_[index + 1];
+            uint8_t r = (pixel >> 11) & 0x1F;
+            uint8_t g = (pixel >> 5) & 0x3F;
+            uint8_t b = pixel & 0x1F;
+
+            red += r;
+            green += g;
+            blue += b;
+            samples++;
+        }
+    }
+
+    // Compute average
+    red /= samples;
+    green /= samples;
+    blue /= samples;
+
+    // Optional brightness check
+    if ((red + green + blue) < 30) return COLOR_UNKNOWN;
+
+    // Use margin threshold to declare a winner
+    if ((red > green + 5) && (red > blue + 5)) return COLOR_RED;
+    if ((green > red + 5) && (green > blue + 5)) return COLOR_GREEN;
+    if ((blue > red + 5) && (blue > green + 5)) return COLOR_BLUE;
+
+    return COLOR_UNKNOWN;
+}
+
+void OV2640Camera::printBlueDetectionMap(UART_HandleTypeDef* huart) {
+    const size_t width = 160;
+    const size_t height = 120;
+    const size_t stride = 2;  // each pixel is 2 bytes
+
+    char rowBuffer[SAMPLE_WIDTH + 3];  // + newline and \0
+    size_t pixelIndex = 0;
+
+    for (size_t y = 0; y < height; y += 2) {  // skip every other row for speed
+        size_t rowPos = 0;
+
+        for (size_t x = 0; x < width * stride; x += STEP * stride) {
+            uint16_t i = y * width * stride + x;
+            if (i + 1 >= FRAME_SIZE) break;
+
+            uint16_t pixel = (frame_buffer_[i] << 8) | frame_buffer_[i + 1];
+            uint8_t r5 = (pixel >> 11) & 0x1F;
+            uint8_t g6 = (pixel >> 5) & 0x3F;
+            uint8_t b5 = pixel & 0x1F;
+
+            uint8_t b8 = (b5 * 255) / 31;
+
+            // Binary classification: is this "blue" enough?
+            if (b8 >= BLUE_THRESHOLD) {
+                rowBuffer[rowPos++] = 'b';
+            } else {
+                rowBuffer[rowPos++] = '_';
+            }
+        }
+
+        rowBuffer[rowPos++] = '\r';
+        rowBuffer[rowPos++] = '\n';
+        rowBuffer[rowPos] = '\0';
+
+        HAL_UART_Transmit(huart, (uint8_t*)rowBuffer, strlen(rowBuffer), HAL_MAX_DELAY);
+    }
+}
+

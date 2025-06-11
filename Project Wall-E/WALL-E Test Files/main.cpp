@@ -86,15 +86,18 @@ static void MX_TIM5_Init(void);
 
 #ifndef WALL_E_FUNC
 #define WALL_E_FUNC
-void WALL_E_systemCheck(BatteryMonitor&, HCSR04&, RomiMotor&, RomiMotor&, BNO055&);
+void WALL_E_systemCheck(BatteryMonitor&, HCSR04&, RomiMotor&, RomiMotor&, BNO055&, OV2640Camera&);
 #endif
 /* USER CODE BEGIN PFP */
+#define OV2640_I2C_ADDR 0x60  // 0x30 << 1
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+void printToUART(const char* msg) {
+    HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
+}
 /* USER CODE END 0 */
 
 /**
@@ -149,7 +152,8 @@ int main(void)
   Servo leftArm(&htim1, TIM_CHANNEL_1);
   Servo leftHand(&htim1, TIM_CHANNEL_2);
 
-  //WALL_E_systemCheck(batteryMonitor, rangeFinder, rightMotor, leftMotor, imu);
+  WALL_E_systemCheck(batteryMonitor, rangeFinder, rightMotor, leftMotor, imu, camera);
+  printToUART("Entering WALL-E FSM\r\n");
   while(1){
 
   }
@@ -160,23 +164,23 @@ int main(void)
  * @brief Function Performs System Peipherals Check
  * @return None
  */
-void WALL_E_systemCheck(BatteryMonitor& bat, HCSR04& range, RomiMotor& rMotor, RomiMotor& lMotor, BNO055& imu){
-	  imu.init_imu();
+void WALL_E_systemCheck(BatteryMonitor& bat, HCSR04& range, RomiMotor& rMotor, RomiMotor& lMotor, BNO055& imu, OV2640Camera& camera){
+	  //imu.init_imu();
 	  char buffer[1024];
-	  uint8_t sys, gyro, accel, mag;
-	  while (true) {
-		  imu.readCalibStatus(sys, gyro, accel, mag);
-		  if (sys == 3 && gyro == 3){
-			  int len = sprintf(buffer, "IMU Calibrated Sys: %d Gyro: %d\r\n", sys, gyro);
-			  HAL_UART_Transmit(&huart2, (uint8_t *)buffer, len, 10);
-			  memset(buffer, 0, sizeof(buffer));
-			  break;
-		  }
-		  int len = sprintf(buffer, "Sys %d, Gyro %d, Accel %d, Mag %d\r\n", sys, gyro, accel, mag);
-		  HAL_UART_Transmit(&huart2, (uint8_t *)buffer, len, 10);
-		  memset(buffer, 0, sizeof(buffer));
-		  HAL_Delay(500);
-	  }
+//	  uint8_t sys, gyro, accel, mag;
+//	  while (true) {
+//		  imu.readCalibStatus(sys, gyro, accel, mag);
+//		  if (sys == 3 && gyro == 3){
+//			  int len = sprintf(buffer, "IMU Calibrated Sys: %d Gyro: %d\r\n", sys, gyro);
+//			  HAL_UART_Transmit(&huart2, (uint8_t *)buffer, len, 10);
+//			  memset(buffer, 0, sizeof(buffer));
+//			  break;
+//		  }
+//		  int len = sprintf(buffer, "Sys %d, Gyro %d, Accel %d, Mag %d\r\n", sys, gyro, accel, mag);
+//		  HAL_UART_Transmit(&huart2, (uint8_t *)buffer, len, 10);
+//		  memset(buffer, 0, sizeof(buffer));
+//		  HAL_Delay(500);
+//	  }
 
 	  /*UltraSonic Sensor Timer*/
 	  HAL_TIM_Base_Start(&htim3);
@@ -201,15 +205,30 @@ void WALL_E_systemCheck(BatteryMonitor& bat, HCSR04& range, RomiMotor& rMotor, R
 		  bool success = range.measure();
 		  if (success){
 				  uint32_t d = range.getDistanceCm();
-				  len = sprintf(buffer, "Distance is %lu cm\r\n", d);
+				  len = sprintf(buffer, "\tDistance is %lu cm\r\n", d);
 				  HAL_UART_Transmit(&huart2, (uint8_t *)buffer, len, 10);
 				  memset(buffer, 0, sizeof(buffer));
 				  break;
 		  HAL_Delay(500);
 		  }
 	  }
-	  len = sprintf(buffer, "Entering WALL-E FSM\r\n");
-	  HAL_UART_Transmit(&huart2, (uint8_t *)buffer, len, 10);
+
+	  /*Camera Check*/
+	  printToUART("Camera I2C Check and initialization\r\n");
+	  uint8_t pid = 0, ver = 0;
+	  HAL_I2C_Mem_Read(&hi2c1, OV2640_I2C_ADDR, 0x0A, I2C_MEMADD_SIZE_8BIT, &pid, 1, HAL_MAX_DELAY);
+	  HAL_I2C_Mem_Read(&hi2c1, OV2640_I2C_ADDR, 0x0B, I2C_MEMADD_SIZE_8BIT, &ver, 1, HAL_MAX_DELAY);
+
+	  char buf[64];
+	  snprintf(buf, sizeof(buf), "\tOV2640 PID: 0x%02X, VER: 0x%02X\r\n", pid, ver);
+	  HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
+	  while(true){
+		  bool success = camera.initialize();
+		  if (success){
+			  printToUART("\tCamera Initialized. Ready to Detect\r\n");
+			  break;
+		  }
+	  }
 }
 
 /*

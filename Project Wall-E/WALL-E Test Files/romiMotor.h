@@ -33,6 +33,7 @@ class RomiMotor{
 		void updatePWM();
 		void enable();
 		void disable();
+		int8_t getDuty();
 
 	private:
 		GPIO_TypeDef* en_Port;

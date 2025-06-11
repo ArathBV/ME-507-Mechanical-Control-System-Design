@@ -20,6 +20,13 @@
 #define INC_CAMERA_H_
 
 #include "stm32f4xx_hal.h"
+#include <cstring>
+#include <cstdio>
+
+#define BLUE_THRESHOLD 200   // Adjust based on lighting and distance
+#define STEP 4               // Read every 2 bytes = 1 pixel, STEP=4 = every other pixel
+#define ROW_WIDTH 160
+#define SAMPLE_WIDTH (ROW_WIDTH / 2)  // Because we skip every other pixel
 
 enum DominantColor {
     COLOR_UNKNOWN,
@@ -34,7 +41,10 @@ public:
 
     bool initialize();
     bool captureFrame();
+    void printCaptureReport(UART_HandleTypeDef* huart);
+    void printBlueDetectionMap(UART_HandleTypeDef* huart);
     DominantColor analyzeColor();
+    DominantColor analyzeColorCenter();
 
 private:
     I2C_HandleTypeDef* i2c_;
