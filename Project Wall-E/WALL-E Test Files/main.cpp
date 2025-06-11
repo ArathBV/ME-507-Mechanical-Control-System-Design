@@ -22,6 +22,7 @@
 #include "batteryMonitor.h"
 #include "romiMotor.h"
 #include "hcsr04.h"
+#include "bno055.h"
 #include <string.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -131,30 +132,56 @@ int main(void)
   BatteryMonitor batteryMonitor(&hadc1, 7000);
   HCSR04 rangeFinder(GPIOA, Trig_Pin, Echo_GPIO_Port, Echo_Pin, &htim3);
   RomiMotor rightMotor(GPIOA, EN_Right_Pin, GPIOB, DIR_Right_Pin, GPIOB, SL_Right_Pin);
+  BNO055 imu(&hi2c1, (uint8_t) 0x28);
+  //imu.init_imu();
 
+  char buffer[1024];
+  uint8_t sys, gyro, accel, mag;
+  while (true) {
+	  imu.readCalibStatus(sys, gyro, accel, mag);
+	  if (sys == 3 && gyro == 3){
+		  int len = sprintf(buffer, "IMU Calibrated Sys: %d Gyro: %d\r\n", sys, gyro);
+		  HAL_UART_Transmit(&huart2, (uint8_t *)buffer, len, 10);
+		  memset(buffer, 0, sizeof(buffer));
+		  break;
+	  }
+	  int len = sprintf(buffer, "Sys %d, Gyro %d, Accel %d, Mag %d\r\n", sys, gyro, accel, mag);
+	  HAL_UART_Transmit(&huart2, (uint8_t *)buffer, len, 10);
+	  memset(buffer, 0, sizeof(buffer));
+	  HAL_Delay(500);
+  }
+
+  /*UltraSonic Sensor Timer*/
   HAL_TIM_Base_Start(&htim3);
 
   /*Interrupt Timer for PWM Signal for Motors*/
   HAL_TIM_Base_Start_IT(&htim5);
-  rightMotor.disable();
+  //rightMotor.disable();
   //rightMotor.updatePWM();
 
   	/*Battery Check*/
-  char buffer[1024];
-  int len = sprintf(buffer, "Battery Voltage is at %u mV\r\n", batteryMonitor.getVoltage_mV());
+  //char buffer[1024];
+  int len = sprintf(buffer, "Battery Voltage is at %u mV\r\nChecking RangeSensor\r\n", batteryMonitor.getVoltage_mV());
   HAL_UART_Transmit(&huart2, (uint8_t *)buffer, len, 10);
   memset(buffer, 0, sizeof(buffer));
 
   /*Range Sensor Check*/
-  rangeFinder.measure();
-  if (rangeFinder.measure()){
-  		  uint32_t d = rangeFinder.getDistanceCm();
-  		  int len = sprintf(buffer, "Distance is %lu cm\r\n", d);
-  		  HAL_UART_Transmit(&huart2, (uint8_t *)buffer, len, 10);
-  		  memset(buffer, 0, sizeof(buffer));
+  while(true){
+	  bool success = rangeFinder.measure();
+	  if (success){
+			  uint32_t d = rangeFinder.getDistanceCm();
+			  len = sprintf(buffer, "Distance is %lu cm\r\n", d);
+			  HAL_UART_Transmit(&huart2, (uint8_t *)buffer, len, 10);
+			  memset(buffer, 0, sizeof(buffer));
+			  break;
+	  HAL_Delay(500);
+	  }
   }
-  int i = 0;
+	  len = sprintf(buffer, "Entering WALL-E FSM\r\n");
+	  HAL_UART_Transmit(&huart2, (uint8_t *)buffer, len, 10);
+
   while(1){
+
   }
 }
 
