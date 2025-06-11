@@ -24,6 +24,7 @@
 #include "hcsr04.h"
 #include "bno055.h"
 #include "camera.h"
+#include "servos.h"
 #include <string.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -63,8 +64,9 @@ TIM_HandleTypeDef htim5;
 
 UART_HandleTypeDef huart2;
 
+/*Global Motors for interrupt updates*/
 RomiMotor rightMotor(GPIOA, EN_Right_Pin, GPIOB, DIR_Right_Pin, GPIOB, SL_Right_Pin);
-//RomiMotor leftMotor();
+RomiMotor leftMotor(GPIOC, EN_Left_Pin, GPIOB, DIR_Left_Pin, GPIOC, SL_Left_Pin);
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -84,7 +86,7 @@ static void MX_TIM5_Init(void);
 
 #ifndef WALL_E_FUNC
 #define WALL_E_FUNC
-void WALL_E_systemCheck(BatteryMonitor&, HCSR04&, RomiMotor&, BNO055&);
+void WALL_E_systemCheck(BatteryMonitor&, HCSR04&, RomiMotor&, RomiMotor&, BNO055&);
 #endif
 /* USER CODE BEGIN PFP */
 
@@ -140,17 +142,14 @@ int main(void)
   /*Peripherals Instantiation*/
   BatteryMonitor batteryMonitor(&hadc1, 7000);
   HCSR04 rangeFinder(GPIOA, Trig_Pin, Echo_GPIO_Port, Echo_Pin, &htim3);
-  //RomiMotor rightMotor(GPIOA, EN_Right_Pin, GPIOB, DIR_Right_Pin, GPIOB, SL_Right_Pin);
   BNO055 imu(&hi2c1, (uint8_t) 0x28);
   OV2640Camera camera(&hi2c1, &hspi1, GPIOC, CAM_CS_Pin);
+  Servo servoTest(&htim1, TIM_CHANNEL_4);
 
-  WALL_E_systemCheck(batteryMonitor, rangeFinder, rightMotor, imu);
-  char buffer[1024];
+
+  //WALL_E_systemCheck(batteryMonitor, rangeFinder, rightMotor, leftMotor, imu);
   while(1){
-//	  int len = sprintf(buffer, "Duty Cycle: %d\r\n", rightMotor.getDuty());
-//	  HAL_UART_Transmit(&huart2, (uint8_t *)buffer, len, 10);
-//	  memset(buffer, 0, sizeof(buffer));
-//	  HAL_Delay(500);
+
   }
 
 }
@@ -159,7 +158,7 @@ int main(void)
  * @brief Function Performs System Peipherals Check
  * @return None
  */
-void WALL_E_systemCheck(BatteryMonitor& bat, HCSR04& range, RomiMotor& rMotor, BNO055& imu){
+void WALL_E_systemCheck(BatteryMonitor& bat, HCSR04& range, RomiMotor& rMotor, RomiMotor& lMotor, BNO055& imu){
 	  imu.init_imu();
 	  char buffer[1024];
 	  uint8_t sys, gyro, accel, mag;
@@ -183,12 +182,15 @@ void WALL_E_systemCheck(BatteryMonitor& bat, HCSR04& range, RomiMotor& rMotor, B
 	  /*Interrupt Timer for PWM Signal for Motors*/
 	  rMotor.enable();
 	  rMotor.setSpeed(0);
-	  //rightMotor.updatePWM();
+	  lMotor.enable();
+	  lMotor.setSpeed(0);
 	  HAL_TIM_Base_Start_IT(&htim5);
+	  int len = sprintf(buffer, "Motors Enabled, Speed Set to 0.\r\n");
+	  HAL_UART_Transmit(&huart2, (uint8_t *)buffer, len, 10);
+	  memset(buffer, 0, sizeof(buffer));
 
 	  /*Battery Check*/
-	  //char buffer[1024];
-	  int len = sprintf(buffer, "Battery Voltage is at %u mV\r\nChecking RangeSensor\r\n", bat.getVoltage_mV());
+	  len = sprintf(buffer, "Battery Voltage is at %u mV\r\nChecking RangeSensor\r\n", bat.getVoltage_mV());
 	  HAL_UART_Transmit(&huart2, (uint8_t *)buffer, len, 10);
 	  memset(buffer, 0, sizeof(buffer));
 
@@ -203,7 +205,7 @@ void WALL_E_systemCheck(BatteryMonitor& bat, HCSR04& range, RomiMotor& rMotor, B
 				  break;
 		  HAL_Delay(500);
 		  }
-		}
+	  }
 	  len = sprintf(buffer, "Entering WALL-E FSM\r\n");
 	  HAL_UART_Transmit(&huart2, (uint8_t *)buffer, len, 10);
 }
@@ -216,7 +218,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
     if (htim->Instance == TIM5) {
         // Your motor PWM logic here
     	rightMotor.updatePWM();
-        //if (leftMotor) leftMotor->updatePWM();
+        leftMotor.updatePWM();
     }
 }
 /**
@@ -408,9 +410,9 @@ static void MX_TIM1_Init(void)
 
   /* USER CODE END TIM1_Init 1 */
   htim1.Instance = TIM1;
-  htim1.Init.Prescaler = 0;
+  htim1.Init.Prescaler = 74;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim1.Init.Period = 65535;
+  htim1.Init.Period = 19999;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim1.Init.RepetitionCounter = 0;
   htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
