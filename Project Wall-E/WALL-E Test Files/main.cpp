@@ -20,11 +20,7 @@
 #include "main.h"
 #include "main.h"
 #include "batteryMonitor.h"
-#include "romiMotor.h"
-#include "hcsr04.h"
-#include "bno055.h"
-#include "camera.h"
-#include "servos.h"
+#include "WALLE_FSM.h"
 #include <string.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -154,6 +150,7 @@ int main(void)
 
   WALL_E_systemCheck(batteryMonitor, rangeFinder, rightMotor, leftMotor, imu, camera);
   printToUART("Entering WALL-E FSM\r\n");
+
   while(1){
 
   }
@@ -165,22 +162,22 @@ int main(void)
  * @return None
  */
 void WALL_E_systemCheck(BatteryMonitor& bat, HCSR04& range, RomiMotor& rMotor, RomiMotor& lMotor, BNO055& imu, OV2640Camera& camera){
-	  //imu.init_imu();
+	  imu.init_imu();
 	  char buffer[1024];
-//	  uint8_t sys, gyro, accel, mag;
-//	  while (true) {
-//		  imu.readCalibStatus(sys, gyro, accel, mag);
-//		  if (sys == 3 && gyro == 3){
-//			  int len = sprintf(buffer, "IMU Calibrated Sys: %d Gyro: %d\r\n", sys, gyro);
-//			  HAL_UART_Transmit(&huart2, (uint8_t *)buffer, len, 10);
-//			  memset(buffer, 0, sizeof(buffer));
-//			  break;
-//		  }
-//		  int len = sprintf(buffer, "Sys %d, Gyro %d, Accel %d, Mag %d\r\n", sys, gyro, accel, mag);
-//		  HAL_UART_Transmit(&huart2, (uint8_t *)buffer, len, 10);
-//		  memset(buffer, 0, sizeof(buffer));
-//		  HAL_Delay(500);
-//	  }
+	  uint8_t sys, gyro, accel, mag;
+	  while (true) {
+		  imu.readCalibStatus(sys, gyro, accel, mag);
+		  if (sys == 3 && gyro == 3){
+			  int len = sprintf(buffer, "IMU Calibrated Sys: %d Gyro: %d\r\n", sys, gyro);
+			  HAL_UART_Transmit(&huart2, (uint8_t *)buffer, len, 10);
+			  memset(buffer, 0, sizeof(buffer));
+			  break;
+		  }
+		  int len = sprintf(buffer, "Sys %d, Gyro %d, Accel %d, Mag %d\r\n", sys, gyro, accel, mag);
+		  HAL_UART_Transmit(&huart2, (uint8_t *)buffer, len, 10);
+		  memset(buffer, 0, sizeof(buffer));
+		  HAL_Delay(500);
+	  }
 
 	  /*UltraSonic Sensor Timer*/
 	  HAL_TIM_Base_Start(&htim3);

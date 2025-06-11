@@ -42,19 +42,22 @@ class BNO055{
 		bool init_imu(REG mode = REG::NDOF);
 		bool updateEuler();
 		bool readCalibStatus(uint8_t& sys, uint8_t& gyro, uint8_t& accel, uint8_t&mag);
-
+		bool updateGyro();
+		int16_t getYawRateZ();
 		int16_t getYaw();
 		int16_t getRoll();
 		int16_t getPitch();
-
-		int16_t pitch;
-		int16_t  yaw;
-		int16_t roll;
 
 
 	private:
 		I2C_HandleTypeDef* hi2c;
 		uint8_t addr;
+		int16_t pitch;
+		int16_t  yaw;
+		int16_t roll;
+		int16_t gyroX;
+		int16_t gyroY;
+		int16_t gyroZ;
 
 		bool writeByte(uint8_t reg, uint8_t value);
 		bool readLen(uint8_t reg, uint8_t* buffer, uint8_t len);

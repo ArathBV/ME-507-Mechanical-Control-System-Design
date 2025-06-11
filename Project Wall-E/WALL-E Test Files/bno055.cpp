@@ -26,6 +26,7 @@
 #define PWR_MODE_ADDR     0x3E
 #define PAGE_ID_ADDR      0x07
 #define CALIB_STAT        0x35
+#define GYRO_DATA_LSB     0x14
 
 
 /*
@@ -74,6 +75,30 @@ bool BNO055::updateEuler() {
     roll  = rawRoll / 16.0f;
     pitch = rawPitch / 16.0f;
     return true;
+}
+
+/*
+ * @brief Function pull they data from the gyroscope retrieving angular velocities.
+ * @return Boolean
+ */
+bool BNO055::updateGyro() {
+    uint8_t buffer[6];
+    if (!readLen(GYRO_DATA_LSB, buffer, 6))
+        return false;
+
+    gyroX = (int16_t)((buffer[1] << 8) | buffer[0]);
+    gyroY = (int16_t)((buffer[3] << 8) | buffer[2]);
+    gyroZ = (int16_t)((buffer[5] << 8) | buffer[4]);
+
+    return true;
+}
+
+/*
+ * @brief Function allows users to retrieve the yaw rate around the Z axis
+ * @return int16_t
+ */
+int16_t BNO055::getYawRateZ() {
+    return gyroZ / 16.0f;  // BNO055 gyro units = LSB/16 dps (degrees per second)
 }
 
 /*
