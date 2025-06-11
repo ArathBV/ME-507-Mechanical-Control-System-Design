@@ -24,25 +24,25 @@
 #include "stm32f4xx_hal.h"
 
 class RomiMotor{
-public:
-	RomiMotor(TIM_HandleTypeDef *htim, uint32_t pwm_ch,
-			GPIO_TypeDef* pwm_port, uint16_t pwm_pin,
-			GPIO_TypeDef *dir_port, uint16_t dir_pin,
-			GPIO_TypeDef*en_port, uint16_t en_pin);
+	public:
+		RomiMotor(GPIO_TypeDef* enPort, uint16_t enPin,
+				GPIO_TypeDef* phPort, uint16_t phPin,
+				GPIO_TypeDef* slPort, uint16_t slPin);
 
-	void setDuty(int Duty);
-	void enable();
-	void disable();
+		void setSpeed(int8_t);
+		void updatePWM();
+		void enable();
+		void disable();
 
-private:
-	TIM_HandleTypeDef* htim;
-	uint32_t pwmChannel;
-	GPIO_TypeDef* pwmPort;
-	uint16_t pwmPin;
-	GPIO_TypeDef* dirPort;
-	uint16_t dirPin;
-	GPIO_TypeDef* enPort;
-	uint16_t enPin;
+	private:
+		GPIO_TypeDef* en_Port;
+		uint16_t en_Pin;
+		GPIO_TypeDef* ph_Port;
+		uint16_t ph_Pin;
+		GPIO_TypeDef* sl_Port;
+		uint16_t sl_Pin;
+		int8_t duty_Cycle;
+		uint8_t pwm_Counter;
 };
 
 #endif /* INC_ROMIMOTOR_C_ */
