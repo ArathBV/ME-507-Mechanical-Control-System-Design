@@ -144,8 +144,10 @@ int main(void)
   HCSR04 rangeFinder(GPIOA, Trig_Pin, Echo_GPIO_Port, Echo_Pin, &htim3);
   BNO055 imu(&hi2c1, (uint8_t) 0x28);
   OV2640Camera camera(&hi2c1, &hspi1, GPIOC, CAM_CS_Pin);
-  Servo servoTest(&htim1, TIM_CHANNEL_4);
-
+  Servo rightArm(&htim1, TIM_CHANNEL_4);
+  Servo rightHand(&htim1, TIM_CHANNEL_3);
+  Servo leftArm(&htim1, TIM_CHANNEL_1);
+  Servo leftHand(&htim1, TIM_CHANNEL_2);
 
   //WALL_E_systemCheck(batteryMonitor, rangeFinder, rightMotor, leftMotor, imu);
   while(1){

@@ -71,3 +71,25 @@ uint16_t Servo::angleToPulse(uint8_t angleDeg) {
     // Linear map: 0° → 1000 µs, 180° → 2000 µs
     return 1000 + ((angleDeg * 1000) / 180);  // No floats used
 }
+
+/*
+ * @brief Function sets Servo to start to stop angle incrementing till requested angle
+ * @return None
+ */
+void Servo::startStopAngle(uint8_t angle1, uint8_t angle2){
+	uint8_t start = angle1;
+	while(start != angle2){
+		setAngle(start);
+		start += 10;
+		if (start > angle2)
+			start = angle2;
+		HAL_Delay(50);
+	}
+	while(start != angle1){
+		setAngle(start);
+		start -= 5;
+		if (start < angle1)
+			start = angle2;
+		HAL_Delay(50);
+	}
+}
