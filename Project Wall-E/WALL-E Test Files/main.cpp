@@ -94,6 +94,18 @@ void WALL_E_systemCheck(BatteryMonitor&, HCSR04&, RomiMotor&, RomiMotor&, BNO055
 void printToUART(const char* msg) {
     HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
 }
+
+void simpleMovements(){
+	rightMotor.setSpeed(10);
+	leftMotor.setSpeed(-10);
+	HAL_Delay(1000);
+	rightMotor.setSpeed(-5);
+	HAL_Delay(500);
+	rightMotor.setSpeed(10);
+	HAL_Delay(700);
+	leftMotor.setSpeed(0);
+	rightMotor.setSpeed(0);
+}
 /* USER CODE END 0 */
 
 /**
@@ -147,12 +159,28 @@ int main(void)
   Servo rightHand(&htim1, TIM_CHANNEL_3);
   Servo leftArm(&htim1, TIM_CHANNEL_1);
   Servo leftHand(&htim1, TIM_CHANNEL_2);
+  rightArm.attach();
+  rightHand.attach();
+  leftArm.attach();
+  leftHand.attach();
 
   WALL_E_systemCheck(batteryMonitor, rangeFinder, rightMotor, leftMotor, imu, camera);
   printToUART("Entering WALL-E FSM\r\n");
 
-  while(1){
+  WALLE walleFSM(imu, rangeFinder, leftMotor, rightMotor, camera, leftArm, leftHand,
+		  rightArm, rightHand);
 
+  walleFSM.init();
+  uint32_t lastTick = HAL_GetTick();
+
+  while(1){
+	  uint32_t currentTick = HAL_GetTick();
+	  float dt = (currentTick - lastTick);
+	  lastTick = currentTick;
+
+	  walleFSM.update(dt);
+
+	  HAL_Delay(5);
   }
 
 }
@@ -226,6 +254,7 @@ void WALL_E_systemCheck(BatteryMonitor& bat, HCSR04& range, RomiMotor& rMotor, R
 			  break;
 		  }
 	  }
+
 }
 
 /*
