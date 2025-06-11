@@ -23,6 +23,7 @@
 #include "romiMotor.h"
 #include "hcsr04.h"
 #include "bno055.h"
+#include "camera.h"
 #include <string.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -62,6 +63,8 @@ TIM_HandleTypeDef htim5;
 
 UART_HandleTypeDef huart2;
 
+RomiMotor rightMotor(GPIOA, EN_Right_Pin, GPIOB, DIR_Right_Pin, GPIOB, SL_Right_Pin);
+//RomiMotor leftMotor();
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -78,15 +81,17 @@ static void MX_USART2_UART_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_TIM5_Init(void);
+
+#ifndef WALL_E_FUNC
+#define WALL_E_FUNC
+void WALL_E_systemCheck(BatteryMonitor&, HCSR04&, RomiMotor&, BNO055&);
+#endif
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
-extern RomiMotor rightMotor;
-extern RomiMotor leftMotor;
 
 /* USER CODE END 0 */
 
@@ -129,62 +134,79 @@ int main(void)
   MX_SPI1_Init();
   MX_TIM5_Init();
 
+  HAL_NVIC_SetPriority(TIM5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(TIM5_IRQn);
+
+  /*Peripherals Instantiation*/
   BatteryMonitor batteryMonitor(&hadc1, 7000);
   HCSR04 rangeFinder(GPIOA, Trig_Pin, Echo_GPIO_Port, Echo_Pin, &htim3);
-  RomiMotor rightMotor(GPIOA, EN_Right_Pin, GPIOB, DIR_Right_Pin, GPIOB, SL_Right_Pin);
+  //RomiMotor rightMotor(GPIOA, EN_Right_Pin, GPIOB, DIR_Right_Pin, GPIOB, SL_Right_Pin);
   BNO055 imu(&hi2c1, (uint8_t) 0x28);
-  //imu.init_imu();
+  OV2640Camera camera(&hi2c1, &hspi1, GPIOC, CAM_CS_Pin);
 
+  WALL_E_systemCheck(batteryMonitor, rangeFinder, rightMotor, imu);
   char buffer[1024];
-  uint8_t sys, gyro, accel, mag;
-  while (true) {
-	  imu.readCalibStatus(sys, gyro, accel, mag);
-	  if (sys == 3 && gyro == 3){
-		  int len = sprintf(buffer, "IMU Calibrated Sys: %d Gyro: %d\r\n", sys, gyro);
-		  HAL_UART_Transmit(&huart2, (uint8_t *)buffer, len, 10);
-		  memset(buffer, 0, sizeof(buffer));
-		  break;
-	  }
-	  int len = sprintf(buffer, "Sys %d, Gyro %d, Accel %d, Mag %d\r\n", sys, gyro, accel, mag);
-	  HAL_UART_Transmit(&huart2, (uint8_t *)buffer, len, 10);
-	  memset(buffer, 0, sizeof(buffer));
-	  HAL_Delay(500);
+  while(1){
+//	  int len = sprintf(buffer, "Duty Cycle: %d\r\n", rightMotor.getDuty());
+//	  HAL_UART_Transmit(&huart2, (uint8_t *)buffer, len, 10);
+//	  memset(buffer, 0, sizeof(buffer));
+//	  HAL_Delay(500);
   }
 
-  /*UltraSonic Sensor Timer*/
-  HAL_TIM_Base_Start(&htim3);
+}
 
-  /*Interrupt Timer for PWM Signal for Motors*/
-  HAL_TIM_Base_Start_IT(&htim5);
-  //rightMotor.disable();
-  //rightMotor.updatePWM();
-
-  	/*Battery Check*/
-  //char buffer[1024];
-  int len = sprintf(buffer, "Battery Voltage is at %u mV\r\nChecking RangeSensor\r\n", batteryMonitor.getVoltage_mV());
-  HAL_UART_Transmit(&huart2, (uint8_t *)buffer, len, 10);
-  memset(buffer, 0, sizeof(buffer));
-
-  /*Range Sensor Check*/
-  while(true){
-	  bool success = rangeFinder.measure();
-	  if (success){
-			  uint32_t d = rangeFinder.getDistanceCm();
-			  len = sprintf(buffer, "Distance is %lu cm\r\n", d);
+/*
+ * @brief Function Performs System Peipherals Check
+ * @return None
+ */
+void WALL_E_systemCheck(BatteryMonitor& bat, HCSR04& range, RomiMotor& rMotor, BNO055& imu){
+	  imu.init_imu();
+	  char buffer[1024];
+	  uint8_t sys, gyro, accel, mag;
+	  while (true) {
+		  imu.readCalibStatus(sys, gyro, accel, mag);
+		  if (sys == 3 && gyro == 3){
+			  int len = sprintf(buffer, "IMU Calibrated Sys: %d Gyro: %d\r\n", sys, gyro);
 			  HAL_UART_Transmit(&huart2, (uint8_t *)buffer, len, 10);
 			  memset(buffer, 0, sizeof(buffer));
 			  break;
-	  HAL_Delay(500);
+		  }
+		  int len = sprintf(buffer, "Sys %d, Gyro %d, Accel %d, Mag %d\r\n", sys, gyro, accel, mag);
+		  HAL_UART_Transmit(&huart2, (uint8_t *)buffer, len, 10);
+		  memset(buffer, 0, sizeof(buffer));
+		  HAL_Delay(500);
 	  }
-  }
+
+	  /*UltraSonic Sensor Timer*/
+	  HAL_TIM_Base_Start(&htim3);
+
+	  /*Interrupt Timer for PWM Signal for Motors*/
+	  rMotor.enable();
+	  rMotor.setSpeed(0);
+	  //rightMotor.updatePWM();
+	  HAL_TIM_Base_Start_IT(&htim5);
+
+	  /*Battery Check*/
+	  //char buffer[1024];
+	  int len = sprintf(buffer, "Battery Voltage is at %u mV\r\nChecking RangeSensor\r\n", bat.getVoltage_mV());
+	  HAL_UART_Transmit(&huart2, (uint8_t *)buffer, len, 10);
+	  memset(buffer, 0, sizeof(buffer));
+
+	  /*Range Sensor Check*/
+	  while(true){
+		  bool success = range.measure();
+		  if (success){
+				  uint32_t d = range.getDistanceCm();
+				  len = sprintf(buffer, "Distance is %lu cm\r\n", d);
+				  HAL_UART_Transmit(&huart2, (uint8_t *)buffer, len, 10);
+				  memset(buffer, 0, sizeof(buffer));
+				  break;
+		  HAL_Delay(500);
+		  }
+		}
 	  len = sprintf(buffer, "Entering WALL-E FSM\r\n");
 	  HAL_UART_Transmit(&huart2, (uint8_t *)buffer, len, 10);
-
-  while(1){
-
-  }
 }
-
 
 /*
  * @brief Function is the interrupt Callback for the Updates on the Motor PWM signals
@@ -193,11 +215,10 @@ int main(void)
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
     if (htim->Instance == TIM5) {
         // Your motor PWM logic here
-        rightMotor.updatePWM();
+    	rightMotor.updatePWM();
         //if (leftMotor) leftMotor->updatePWM();
     }
 }
-
 /**
   * @brief System Clock Configuration
   * @retval None
@@ -215,10 +236,14 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
-  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+  RCC_OscInitStruct.PLL.PLLM = 16;
+  RCC_OscInitStruct.PLL.PLLN = 192;
+  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV4;
+  RCC_OscInitStruct.PLL.PLLQ = 4;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -228,12 +253,12 @@ void SystemClock_Config(void)
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
   {
     Error_Handler();
   }
@@ -260,7 +285,7 @@ static void MX_ADC1_Init(void)
   /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
   */
   hadc1.Instance = ADC1;
-  hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV2;
+  hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
   hadc1.Init.Resolution = ADC_RESOLUTION_12B;
   hadc1.Init.ScanConvMode = DISABLE;
   hadc1.Init.ContinuousConvMode = DISABLE;

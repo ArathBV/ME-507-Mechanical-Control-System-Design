@@ -18,7 +18,9 @@
   */
 
 #include "romiMotor.h"
+#include "main.h"
 #include <cmath>
+
 
 /*
  * @brief Construction for the ROMI Motor Class
@@ -35,7 +37,7 @@ RomiMotor::RomiMotor(GPIO_TypeDef* enPort, uint16_t enPin,
  */
 void RomiMotor::enable(){
 	HAL_GPIO_WritePin(sl_Port, sl_Pin, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(en_Port, en_Pin, GPIO_PIN_SET);
+	//HAL_GPIO_WritePin(en_Port, en_Pin, GPIO_PIN_SET);
 }
 
 /*
@@ -56,7 +58,7 @@ void RomiMotor::setSpeed(int8_t speed){
 	if (speed < -100) speed = -100;
 
 	duty_Cycle = abs(speed);
-    HAL_GPIO_WritePin(ph_Port, ph_Pin, (speed < 0) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(ph_Port, ph_Pin, (speed <= 0) ? GPIO_PIN_SET : GPIO_PIN_RESET);
 
 }
 
@@ -67,12 +69,20 @@ void RomiMotor::setSpeed(int8_t speed){
  */
 void RomiMotor::updatePWM(){
 	pwm_Counter = (pwm_Counter + 1) % 100;
-	if (pwm_Counter < duty_Cycle){
+	if (duty_Cycle == 0){
+		HAL_GPIO_WritePin(en_Port, en_Pin, GPIO_PIN_RESET);
+	}
+
+	else if (pwm_Counter < duty_Cycle){
 		HAL_GPIO_WritePin(en_Port, en_Pin, GPIO_PIN_SET);
-	}else{
+	}
+	else{
 		HAL_GPIO_WritePin(en_Port, en_Pin, GPIO_PIN_RESET);
 	}
 }
 
+int8_t RomiMotor::getDuty(){
+	return duty_Cycle;
+}
 
 
